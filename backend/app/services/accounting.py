@@ -10,7 +10,7 @@ class AccountingService:
     """Service for financial calculations and reporting"""
 
     @staticmethod
-    def get_summary(db: Session, start_date: datetime = None, end_date: datetime = None) -> Dict:
+    def get_summary(db: Session, user_id: int, start_date: datetime = None, end_date: datetime = None) -> Dict:
         """
         Get financial summary for a date range
         
@@ -22,7 +22,7 @@ class AccountingService:
         Returns:
             Dictionary with summary statistics
         """
-        query = db.query(Transaction)
+        query = db.query(Transaction).filter(Transaction.user_id == user_id)
         
         if start_date:
             query = query.filter(Transaction.date >= start_date)
@@ -47,7 +47,7 @@ class AccountingService:
         }
 
     @staticmethod
-    def get_category_breakdown(db: Session, start_date: datetime = None, end_date: datetime = None) -> List[Dict]:
+    def get_category_breakdown(db: Session, user_id: int, start_date: datetime = None, end_date: datetime = None) -> List[Dict]:
         """
         Get spending breakdown by category
         
@@ -63,7 +63,7 @@ class AccountingService:
             Transaction.category,
             func.sum(Transaction.amount).label('total'),
             func.count(Transaction.id).label('count')
-        ).filter(Transaction.amount > 0)
+        ).filter(Transaction.user_id == user_id, Transaction.amount > 0)
         
         if start_date:
             query = query.filter(Transaction.date >= start_date)
@@ -82,7 +82,7 @@ class AccountingService:
         ]
 
     @staticmethod
-    def get_monthly_trend(db: Session, months: int = 6) -> List[Dict]:
+    def get_monthly_trend(db: Session, user_id: int, months: int = 6) -> List[Dict]:
         """
         Get monthly spending trend
         
@@ -102,6 +102,7 @@ class AccountingService:
             func.sum(Transaction.amount).label('total'),
             func.count(Transaction.id).label('count')
         ).filter(
+            Transaction.user_id == user_id,
             Transaction.date >= start_date,
             Transaction.date <= end_date,
             Transaction.amount > 0
@@ -120,7 +121,7 @@ class AccountingService:
         ]
 
     @staticmethod
-    def export_to_csv(db: Session, start_date: datetime = None, end_date: datetime = None) -> str:
+    def export_to_csv(db: Session, user_id: int, start_date: datetime = None, end_date: datetime = None) -> str:
         """
         Export transactions to CSV format
         
@@ -132,7 +133,7 @@ class AccountingService:
         Returns:
             CSV string
         """
-        query = db.query(Transaction)
+        query = db.query(Transaction).filter(Transaction.user_id == user_id)
         
         if start_date:
             query = query.filter(Transaction.date >= start_date)
